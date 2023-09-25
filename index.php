@@ -39,9 +39,11 @@ $request_headers['host'] = $proxied_host;
 $request_body = file_get_contents('php://input');
 // PHP has a flaw where php://input returns empty when Content-Type is multipart/form-data!
 if (!$request_body && $_SERVER['REQUEST_METHOD'] === 'POST' && count($_POST) && stripos($request_headers['Content-Type'], 'multipart/form-data') !== false) {
-    unset($request_headers['Content-Type']);
-    unset($request_headers['Content-Length']);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, $_POST);
+    $multipart = $_POST;
+    foreach($_FILES as $fileFieldName => $fileInfo){
+        $multipart[$fileFieldName] = curl_file_create($fileInfo['tmp_name'], $fileInfo['type'], $fileInfo['name']);
+    }
+    curl_setopt($ch, CURLOPT_POSTFIELDS, $multipart);
 } else {
     curl_setopt($ch, CURLOPT_POSTFIELDS, $request_body);
 }
